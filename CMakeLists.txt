@@ -12,13 +12,18 @@ if(DEFINED ENV{CMAKE_LIBS_DIR})
 endif()
 
 FetchContent_Declare(
-    rayplus
-    GIT_REPOSITORY https://github.com/rkc137/rayplus.git
-    GIT_TAG 01a925e6f249049ff1d550a98fca01e94eefacc9
+    SFML
+    GIT_REPOSITORY https://github.com/SFML/SFML.git
+    GIT_TAG master
+    GIT_SHALLOW ON
+    EXCLUDE_FROM_ALL
+    SYSTEM
 )
-FetchContent_MakeAvailable(rayplus)
+FetchContent_MakeAvailable(SFML)
+set(SFML_STATIC_LIBRARIES TRUE)
+
 add_executable(game_of_life src/main.cpp)
 
 target_compile_options(game_of_life PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(game_of_life PRIVATE rayplus)
+target_link_libraries(game_of_life PRIVATE SFML::Graphics SFML::Audio)
 target_link_options(game_of_life PRIVATE -static)
