@@ -31,28 +31,34 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
         // else if constexpr (draw_mode == DrawMode::rainbow_porridge);
     }
 
-    static auto ball = std::invoke([&](){
-        static constexpr auto wsize = static_cast<sf::Vector2f>(window_size);
+    static auto squares = std::invoke([&](){
+        // static constexpr auto wsize = static_cast<sf::Vector2f>(window_size);
         static struct {
-            sf::Vertex head{
-                .position = {wsize.x / 2, wsize.y / 2},
-                .color = config.get_alive_color()
-            };
-            std::array<std::array<sf::Vertex, X>, Y> vertexes;
-        } ball;
-        static constexpr auto &vertexes = ball.vertexes;
-        static constexpr auto R = std::min(wsize.x, wsize.y) / 2;
-        static constexpr float size = vertexes.size() * vertexes.begin()->size();
+            // sf::Vertex head{
+            //     .position = {wsize.x / 2, wsize.y / 2},
+            //     .color = config.get_alive_color()
+            // };
+            using Square = std::array<sf::Vertex, 4>;
+            std::array<std::array<Square, X>, Y> vertexes;
+        } squares;
+        static constexpr auto &vertexes = squares.vertexes;
+        // static constexpr auto R = std::min(wsize.x, wsize.y) / 2;
+        // sf::Angle angle = sf::degrees(static_cast<float>(x + X * y) / size * 360.f);
+        // R * cos(angle.asRadians()) + wsize.x / 2,
+        // R * sin(angle.asRadians()) + wsize.y / 2
+        // static constexpr float size = vertexes.size() * vertexes.begin()->size();
         for(int y = 0; y < Y; y++)
         for(int x = 0; x < X; x++)
         {
-            sf::Angle angle = sf::degrees(static_cast<float>(x + X * y) / size * 360.f);
-            vertexes[y][x].position = {
-                R * cos(angle.asRadians()) + wsize.x / 2,
-                R * sin(angle.asRadians()) + wsize.y / 2
-            };
+            float rx = x * rect_size;
+            float ry = y * rect_size;
+            auto &v = vertexes[y][x];
+            v[0].position = {rx, ry};
+            v[1].position = {rx + rect_size, ry};
+            v[2].position = {rx, ry + rect_size};
+            v[3].position = {rx + rect_size, ry + rect_size};
         }
-        return ball;
+        return squares;
     });
 
     auto alive_color = config.get_alive_color();
@@ -74,8 +80,8 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
                 static_cast<uint8_t>(rand() % 255),
                 static_cast<uint8_t>(rand() % 255),
                 255};
-            
-        ball.vertexes[y][x].color = color;
+        for(auto &v : squares.vertexes[y][x])
+            v.color = color;
 
         // if(map[y + 1][x + 1])
         //     ctx.draw_rect(
@@ -99,5 +105,9 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
     // else
     //     for(auto &map_ref : maps)
     //         draw_map(map_ref.get());
-    window.draw(reinterpret_cast<const sf::Vertex*>(&ball), ball.vertexes.begin()->size() * ball.vertexes.size(), *config.premitiva);
+    window.draw(
+        reinterpret_cast<const sf::Vertex*>(&squares),
+        squares.vertexes.size() * squares.vertexes.begin()->size() * squares.vertexes.begin()->begin()->size(),
+        *config.premitiva
+    );
 }
