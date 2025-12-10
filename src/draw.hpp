@@ -3,12 +3,11 @@
 #include <SFML/Graphics.hpp>
 
 #include "config.hpp"
-#include <iostream>
 
 void draw(sf::RenderWindow &window, const MapsInOrder &maps)
 {
     sf::Color rainbow_color;
-    if(config.draw_mode == Config::DrawMode::normal)
+    if(*state.draw_mode == DrawMode::normal)
     {
         window.clear(dead_color);
     }
@@ -22,7 +21,7 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
         });
         window.draw(shadow);
         
-        if(config.draw_mode == Config::DrawMode::rainbow)
+        if(*state.draw_mode == DrawMode::rainbow)
             rainbow_color = Color{
                 static_cast<uint8_t>(rand() % 255),
                 static_cast<uint8_t>(rand() % 255),
@@ -36,7 +35,7 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
         static struct {
             // sf::Vertex head{
             //     .position = {wsize.x / 2, wsize.y / 2},
-            //     .color = config.get_alive_color()
+            //     .color = state.get_alive_color()
             // };
             using Square = std::array<sf::Vertex, 4>;
             std::array<std::array<Square, X>, Y> vertexes;
@@ -61,20 +60,19 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
         return squares;
     });
 
-    auto alive_color = config.get_alive_color();
     for(int y = 0; y < Y; y++)
     for(int x = 0; x < X; x++)
     {
-        auto color = alive_color;
+        auto color = state.alive_color;
         uint8_t lives = 0;
         for(auto &map : maps)
             lives += map.get() [y][x];
-        color.a = config.get_alive_color_alpha() * lives;
-        if(config.draw_mode == Config::DrawMode::normal)
+        color.a = state.get_alive_color_alpha() * lives;
+        if(*state.draw_mode == DrawMode::normal)
             ;
-        else if(config.draw_mode == Config::DrawMode::rainbow)
+        else if(*state.draw_mode == DrawMode::rainbow)
             color = rainbow_color;
-        else if(config.draw_mode == Config::DrawMode::rainbow_porridge)
+        else if(*state.draw_mode == DrawMode::rainbow_porridge)
             color = {
                 static_cast<uint8_t>(rand() % 255),
                 static_cast<uint8_t>(rand() % 255),
@@ -88,11 +86,11 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
         //         {rect_size * x, rect_size * y},
         //         {rect_size,     rect_size},
         //         [&]() -> rayplus::Color {
-        //             if(config.draw_mode == Config::DrawMode::normal)
-        //                 return config.get_alive_color();
-        //             else if(config.draw_mode == Config::DrawMode::rainbow)
+        //             if(state.draw_mode == Config::DrawMode::normal)
+        //                 return state.get_alive_color();
+        //             else if(state.draw_mode == Config::DrawMode::rainbow)
         //                 return rainbow_color;
-        //             else if(config.draw_mode == Config::DrawMode::rainbow_porridge)
+        //             else if(state.draw_mode == Config::DrawMode::rainbow_porridge)
         //                 return {rand() % 255, rand() % 255, rand() % 255, 255};
                     
         //             throw std::runtime_error("the behavior for this rule (if its rule) is undefined");
@@ -100,7 +98,7 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
         //         }()
         //     );
     }
-    // if(config.is_drawing_only_present())
+    // if(state.is_drawing_only_present())
     //     draw_map(maps.back().get());
     // else
     //     for(auto &map_ref : maps)
@@ -108,6 +106,6 @@ void draw(sf::RenderWindow &window, const MapsInOrder &maps)
     window.draw(
         reinterpret_cast<const sf::Vertex*>(&squares),
         squares.vertexes.size() * squares.vertexes.begin()->size() * squares.vertexes.begin()->begin()->size(),
-        *config.premitiva
+        *state.premitiva
     );
 }

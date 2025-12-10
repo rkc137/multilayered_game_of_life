@@ -9,7 +9,7 @@ namespace Rules
 
 using Extravert = const std::function<bool(int)>;
 using Introvert = const std::function<bool(int, int)>;
-auto &past_size = config.past_size_ref;
+auto &past_size = state.past_size;
 
 const auto extraverts = std::to_array<Extravert>({
     [](int count) -> bool { 

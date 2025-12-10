@@ -1,5 +1,10 @@
 #include <SFML/Graphics.hpp>
 
+#include <imgui-SFML.h>
+#include <imgui.h>
+#include <magic_enum/magic_enum.hpp>
+
+#include <ranges>
 #include <random>
 #include <thread>
 #include <chrono>
@@ -30,26 +35,27 @@ void clear(Universe &maps, Frame frame)
 
 int main()
 {
-    Universe maps{std::size_t(config.past_size_ref + 1), {}};
+    Universe maps{std::size_t(state.past_size + 1), {}};
     MapsInOrder maps_in_order{maps.begin(), maps.end()};
     setup(maps, full_frame);
 
-    sf::RenderWindow window{sf::VideoMode{window_size}, "game of life raylib" };
+    sf::RenderWindow window{sf::VideoMode{window_size}, "game of life" };
     window.setFramerateLimit(target_fps);
+    if(!ImGui::SFML::Init(window))
+        throw std::runtime_error("imgui init failure");
+    ImGui::GetIO().FontGlobalScale = 1.5f;
 
+
+    bool is_pause = false;
     bool is_introverts = true;
+    size_t rule_idx = 0;
 
-    int rule_idx = 0;
-    auto update_title = [&](){
-        window.setTitle(
-            "past size: " + std::to_string(config.past_size_ref) +
-            std::string(is_introverts ? "  introvert" : "  extravert") +
-            " rule: " + std::to_string(rule_idx));
-    };
+    sf::Clock clock;
     for(unsigned int turn = 0; window.isOpen(); turn++)
     {
         while(const std::optional event = window.pollEvent())
         {
+            ImGui::SFML::ProcessEvent(window, *event);
             if(event->is<sf::Event::Closed>()) window.close();
             else if(const auto* resized = event->getIf<sf::Event::Resized>())
             {
@@ -65,91 +71,118 @@ int main()
                     static_cast<sf::Vector2f>(size)
                 });
             }
-            else if(const auto* k = event->getIf<sf::Event::KeyPressed>())
-            {
-                using namespace sf::Keyboard;
-
-                auto is_ctrl_down = isKeyPressed(Key::LControl) || isKeyPressed(Key::RControl);
-
-                switch(k->code)
-                {
-                case Key::Enter:
-                    if(is_ctrl_down)
-                    {
-                        is_introverts ^= true;
-                        rule_idx = 0;
-                    } 
-                    else
-                    {
-                        rule_idx = ++rule_idx % (is_introverts ? Rules::introverts.size() : Rules::extraverts.size());
-                    }
-                    update_title();
-                break;
-                case Key::U:
-                    if(++config.premitiva == prims.end())
-                        config.premitiva = prims.begin();
-                break;
-                case Key::R:
-                    setup(maps, (is_ctrl_down ? little_frame : full_frame));
-                break;
-                case Key::C:
-                    clear(maps, (is_ctrl_down ? little_frame : full_frame));
-                break;
-                case Key::P:
-                    if(is_ctrl_down)
-                    {
-                        static bool idop = false;
-                        idop = !idop;
-                        config.set_drawing_only_present(idop);   
-                    }
-                    else
-                    {
-                        config.draw_mode = static_cast<Config::DrawMode>(
-                            (static_cast<int>(config.draw_mode) + 1) % Config::DrawModes_size
-                        );
-                    }
-                break;
-                case Key::Grave:
-                {
-                    //for now its just reassign
-                    int psize = config.past_size_ref;
-                    if(is_ctrl_down)
-                    {
-                        if(psize <= 1)
-                            break;
-                        psize--;
-                    }
-                    else
-                    {
-                        psize++;
-                    }
-                    config.set_past_size(psize);
-                    maps.resize(psize + 1);
-                    maps_in_order.assign(maps.begin(), maps.end());
-                    setup(maps, full_frame);
-                    update_title();
-                }
-                break;
-                default:
-                }
-            }
+            
         }
-        
+
+        // ui
+        {        
+            ImGui::SFML::Update(window, clock.restart());     
+            ImGui::Begin("Configuration");
+            ImGui::Checkbox("Pause", &is_pause);
+            ImGui::Checkbox("Draw only present", &state.is_present_draw);
+            if(ImGui::Button("Randomize little frame"))
+                setup(maps, little_frame);
+            if(ImGui::Button("Randomize all cells"))
+                setup(maps, full_frame);
+            if(ImGui::Button("clear little frame"))
+                clear(maps, little_frame);
+            if(ImGui::Button("clear all cells"))
+                clear(maps, full_frame);
+            ImGui::Text("layers of past: ");
+            ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
+            
+            auto ui_counter = [&](auto f, auto counter)
+            {
+                float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+                ImGui::PushItemFlag(ImGuiItemFlags_ButtonRepeat, true);
+                if(ImGui::ArrowButton("##left", ImGuiDir_Left))
+                    f(-1);
+                ImGui::SameLine(0.0f, spacing);
+                ImGui::Text("%d", counter());
+                ImGui::SameLine(0.0f, spacing);
+                if(ImGui::ArrowButton("##right", ImGuiDir_Right))
+                    f(1);
+                ImGui::PopItemFlag();
+            };
+            
+            ui_counter([&](int k){
+                int new_psize = state.past_size + k;
+                if(1 > new_psize || new_psize > 1023) return;
+                state.past_size = new_psize;
+                maps.resize(new_psize + 1);
+                maps_in_order.assign(maps.begin(), maps.end());
+                setup(maps, full_frame);
+            }, [&]{ return state.past_size; });
+            
+            if(ImGui::BeginListBox("Rule"))
+            {
+                for(size_t i = 0; i < Rules::introverts.size(); i++)
+                {
+                    const bool is_selected = (rule_idx == i) && is_introverts;
+                    if(ImGui::Selectable(("Introvert №" + std::to_string(i)).c_str(), is_selected))
+                    {
+                        rule_idx = i;
+                        is_introverts = true;
+                    }
+                    if(is_selected) ImGui::SetItemDefaultFocus();
+                }
+                for(size_t i = 0; i < Rules::extraverts.size(); i++)
+                {
+                    const bool is_selected = (rule_idx == i) && !is_introverts;
+                    if(ImGui::Selectable(("Extravert №" + std::to_string(i)).c_str(), is_selected))
+                    {
+                        rule_idx = i;
+                        is_introverts = false;
+                    }    
+                    if(is_selected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndListBox();
+            }
+            if(ImGui::BeginListBox("Vertex draw mode"))
+            {
+                for(auto it = prims.begin(); it != prims.end(); ++it)
+                {
+                    const bool is_selected = (it == state.premitiva);
+                    if(ImGui::Selectable(magic_enum::enum_name(*it).data(), is_selected))
+                        state.premitiva = it;
+                    if(is_selected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndListBox();
+            }
+            if(ImGui::BeginListBox("Drawing mode"))
+            {
+                for(auto it = draw_modes.begin(); it != draw_modes.end(); ++it)
+                {
+                    const bool is_selected = (it == state.draw_mode);
+                    if(ImGui::Selectable(magic_enum::enum_name(*it).data(), is_selected))
+                        state.draw_mode = it;
+                    if(is_selected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndListBox();
+            }
+            ImGui::End();
+        }
+
+
         maps_in_order.splice(
             maps_in_order.end(),
             maps_in_order,
             maps_in_order.begin()
         );
-
-        if(is_introverts)
-            sim_frame(maps_in_order, Rules::introverts[rule_idx]);
-        else
-            sim_frame(maps_in_order, Rules::extraverts[rule_idx]);
-
+        if(!is_pause)
+        {
+            if(is_introverts)
+                sim_frame(maps_in_order, Rules::introverts[rule_idx]);
+            else
+                sim_frame(maps_in_order, Rules::extraverts[rule_idx]);
+        }
         if(!(turn % (howmh_frames_skip + 1)))
             draw(window, maps_in_order);
+        
+        ImGui::SFML::Render(window);
         window.display();
     }
-
+    ImGui::SFML::Shutdown();
+    
     return 0;
 }
