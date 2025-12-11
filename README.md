@@ -9,6 +9,6 @@ Some highliths: [demo video](https://youtu.be/gR2llpU1iEQ)
 ## how it works?
 There is one grid that represents the present time, and one or more layers that store previous states of the grid to calculate the new one.
 List of rules contains in `rules.hpp` where 2 arrays of rules, Extraverts - dont depend on their past, and Itroverts - depend on their past.
-![scheme](screenshots\example.png)
+![scheme](screenshots/example.png)
 you can change some of configuration values in runtime:
-![conf](screenshots\configurations.png)
+![conf](screenshots/configurations.png)
