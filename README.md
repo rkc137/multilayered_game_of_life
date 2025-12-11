@@ -11,4 +11,5 @@ There is one grid that represents the present time, and one or more layers that 
 List of rules contains in `rules.hpp` where 2 arrays of rules, Extraverts - dont depend on their past, and Itroverts - depend on their past.
 ![scheme](screenshots/example.png)
 you can change some of configuration values in runtime:
+
 ![conf](screenshots/configurations.png)
