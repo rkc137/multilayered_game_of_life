@@ -33,6 +33,24 @@ void clear(Universe &maps, Frame frame)
             map[y][x] = false;
 }
 
+constexpr std::string constexpr_to_string(int v)
+{
+    // +1 for minus, +1 for digits10
+    constexpr size_t bufsize{std::numeric_limits<int>::digits10 + 2};
+    char buf[bufsize];
+    const auto res = std::to_chars(buf, buf + bufsize , v);
+    return std::string(buf, res.ptr);
+}
+
+template <size_t N>
+constexpr auto arr_names(std::string_view str)
+{
+    std::array<std::string, N> names;
+    for(auto [i, s] : names | std::views::enumerate)
+        s = std::string{str}.append(constexpr_to_string(i));
+    return names;
+}
+
 int main()
 {
     Universe maps{std::size_t(state.past_size + 1), {}};
@@ -119,7 +137,8 @@ int main()
                 for(size_t i = 0; i < Rules::introverts.size(); i++)
                 {
                     const bool is_selected = (rule_idx == i) && is_introverts;
-                    if(ImGui::Selectable(("Introvert №" + std::to_string(i)).c_str(), is_selected))
+                    static auto names = arr_names<Rules::introverts.size()>("Introverts #");
+                    if(ImGui::Selectable(names[i].c_str(), is_selected))
                     {
                         rule_idx = i;
                         is_introverts = true;
@@ -129,7 +148,8 @@ int main()
                 for(size_t i = 0; i < Rules::extraverts.size(); i++)
                 {
                     const bool is_selected = (rule_idx == i) && !is_introverts;
-                    if(ImGui::Selectable(("Extravert №" + std::to_string(i)).c_str(), is_selected))
+                    static auto names = arr_names<Rules::extraverts.size()>("Extraverts #");
+                    if(ImGui::Selectable(names[i].c_str(), is_selected))
                     {
                         rule_idx = i;
                         is_introverts = false;
