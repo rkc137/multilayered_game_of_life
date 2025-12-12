@@ -180,6 +180,15 @@ int main()
                 }
                 ImGui::EndListBox();
             }
+            static float color[3] = {
+                static_cast<float>(state.alive_color.r) / 255.f,
+                static_cast<float>(state.alive_color.g) / 255.f,
+                static_cast<float>(state.alive_color.b) / 255.f
+            };
+            ImGui::ColorPicker3("alive color", color);
+            state.alive_color.r = static_cast<uint8_t>(color[0] * 255.f);
+            state.alive_color.g = static_cast<uint8_t>(color[1] * 255.f);
+            state.alive_color.b = static_cast<uint8_t>(color[2] * 255.f);
             ImGui::End();
         }
 
