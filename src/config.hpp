@@ -61,9 +61,9 @@ public:
         return static_cast<uint8_t>(255 / (is_present_draw ? 1 : (past_size + 1)));
     }
 
-    decltype(prims.begin()) premitiva = prims.begin();
+    decltype(prims.begin()) premitiva = prims.begin() + static_cast<int>(sf::PrimitiveType::TriangleStrip);
     decltype(draw_modes.begin()) draw_mode = draw_modes.begin();
-    int past_size = 2;
+    int past_size = 1;
     bool is_present_draw = true;
     Color alive_color = Color::Red;
 } state;
