@@ -192,14 +192,13 @@ int main()
             ImGui::End();
         }
 
-
-        maps_in_order.splice(
-            maps_in_order.end(),
-            maps_in_order,
-            maps_in_order.begin()
-        );
         if(!is_pause)
         {
+            maps_in_order.splice(
+                maps_in_order.end(),
+                maps_in_order,
+                maps_in_order.begin()
+            );
             if(is_introverts)
                 sim_frame(maps_in_order, Rules::introverts[rule_idx]);
             else
