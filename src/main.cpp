@@ -19,8 +19,8 @@ void setup(Universe &maps, Frame frame)
 {
     const auto [pos, size] = frame;
     for(auto &map : maps)
-        for(int y = pos.y; y < size.y; y++)
-        for(int x = pos.x; x < size.x; x++)
+        for(int y = pos.y; y <= size.y; y++)
+        for(int x = pos.x; x <= size.x; x++)
             map[y][x] = !(rand() % born_chance);
 }
 
@@ -28,8 +28,8 @@ void clear(Universe &maps, Frame frame)
 {
     const auto [pos, size] = frame;
     for(auto &map : maps)
-        for(int y = pos.y; y < size.y; y++)
-        for(int x = pos.x; x < size.x; x++)
+        for(int y = pos.y; y <= size.y; y++)
+        for(int x = pos.x; x <= size.x; x++)
             map[y][x] = false;
 }
 
