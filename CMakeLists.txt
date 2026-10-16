@@ -7,15 +7,20 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED OFF)
 include(FetchContent)
 
-FetchContent_Declare(
-    SFML
-    GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG master
-    GIT_SHALLOW ON
-    EXCLUDE_FROM_ALL
-    SYSTEM
-)
-FetchContent_MakeAvailable(SFML)
+option(USE_FETCHCONTENT "fetching sfml" FALSE)
+if(USE_FETCHCONTENT)
+    FetchContent_Declare(
+        SFML
+        GIT_REPOSITORY https://github.com/SFML/SFML.git
+        GIT_TAG 3.0.2
+    )
+    FetchContent_MakeAvailable(SFML)
+    message("fetching libs")
+else()
+    message("searching for sfml. FetchContent for it is off")
+    find_package(SFML REQUIRED COMPONENTS Graphics Audio Window System)
+endif()
+
 set(SFML_STATIC_LIBRARIES TRUE)
 FetchContent_Declare(ImGui
     GIT_REPOSITORY https://github.com/ocornut/imgui
@@ -33,6 +38,7 @@ FetchContent_Declare(ImGui-SFML
     EXCLUDE_FROM_ALL
     SYSTEM)
 FetchContent_MakeAvailable(ImGui-SFML)
+target_compile_options(ImGui-SFML PRIVATE -w) # to shutup warnings
 
 FetchContent_Declare(magic_enum
     GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
