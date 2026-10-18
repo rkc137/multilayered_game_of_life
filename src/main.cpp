@@ -92,6 +92,24 @@ int main()
             
         }
 
+        if(sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && !ImGui::GetIO().WantCaptureMouse)
+        {
+            auto [x, y] = sf::Mouse::getPosition(window);
+            x /= rect_size;
+            y /= rect_size;
+            if(x > 0 && x < X && y > 0 && y < Y)
+            {
+                for(auto &map : maps)
+                {
+                    map[y + 1][x + 1] = true;
+                    map[y - 1][x - 1] = true;
+                    map[y + 1][x - 1] = true;
+                    map[y - 1][x + 1] = true;
+                    map[y][x] = true;
+                }
+            }
+        }
+
         // ui
         {        
             ImGui::SFML::Update(window, clock.restart());     
